@@ -1,0 +1,43 @@
+[package]
+name = "hmm-server"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+license = "MIT"
+authors = ["DorskFR"]
+description = "Ingest server for @dorsk/hmm feedback reports: validates, scrubs and stores them in Postgres and S3."
+repository = "https://github.com/DorskFR/hmm-server"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+doc_markdown = "allow"
+
+[dependencies]
+axum = "0.8"
+tower-http = { version = "0.7", features = ["cors", "trace"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "json", "migrate", "macros"] }
+object_store = { version = "0.14", features = ["aws"] }
+bytes = "1"
+base64 = "0.22"
+regex = "1"
+jsonschema = { version = "0.61", default-features = false }
+url = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+futures-util = "0.3"

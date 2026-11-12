@@ -1,0 +1,163 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "https://github.com/DorskFR/hmm/blob/main/schema/envelope.v1.json",
+	"title": "hmm report envelope v1",
+	"type": "object",
+	"additionalProperties": false,
+	"required": [
+		"v",
+		"id",
+		"kind",
+		"project",
+		"createdAt",
+		"client",
+		"context",
+		"comment",
+		"items",
+		"attachments"
+	],
+	"properties": {
+		"v": { "const": 1 },
+		"id": { "$ref": "#/definitions/id" },
+		"kind": { "enum": ["feedback", "error", "alert"] },
+		"category": { "enum": ["idea", "problem", "question", "other"] },
+		"fingerprint": { "type": "string", "maxLength": 500 },
+		"project": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$" },
+		"createdAt": {
+			"type": "string",
+			"maxLength": 40,
+			"pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+		},
+		"client": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["name", "version"],
+			"properties": {
+				"name": { "type": "string", "maxLength": 100 },
+				"version": { "type": "string", "maxLength": 100 }
+			}
+		},
+		"page": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["url", "title", "viewport", "userAgent", "language"],
+			"properties": {
+				"url": { "type": "string", "maxLength": 2000 },
+				"title": { "type": "string", "maxLength": 500 },
+				"userAgent": { "type": "string", "maxLength": 500 },
+				"language": { "type": "string", "maxLength": 100 },
+				"viewport": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["width", "height"],
+					"properties": {
+						"width": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+						"height": { "type": "integer", "minimum": 0, "maximum": 1000000 }
+					}
+				}
+			}
+		},
+		"context": {
+			"description": "Free-form host data. Must also serialise to at most 16000 characters.",
+			"type": "object",
+			"maxProperties": 50
+		},
+		"comment": { "type": "string", "maxLength": 5000 },
+		"items": {
+			"type": "array",
+			"maxItems": 20,
+			"items": {
+				"oneOf": [{ "$ref": "#/definitions/elementItem" }, { "$ref": "#/definitions/screenshotItem" }]
+			}
+		},
+		"attachments": {
+			"description": "Ids must be unique, and every item attachment must name one of them.",
+			"type": "array",
+			"maxItems": 10,
+			"items": { "$ref": "#/definitions/attachment" }
+		}
+	},
+	"definitions": {
+		"id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$" },
+		"elementItem": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "type", "url", "comment", "target"],
+			"properties": {
+				"id": { "$ref": "#/definitions/id" },
+				"type": { "const": "element" },
+				"url": { "type": "string", "maxLength": 2000 },
+				"comment": { "type": "string", "maxLength": 5000 },
+				"target": { "$ref": "#/definitions/target" },
+				"attachment": { "$ref": "#/definitions/id" }
+			}
+		},
+		"screenshotItem": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "type", "url", "comment", "attachment"],
+			"properties": {
+				"id": { "$ref": "#/definitions/id" },
+				"type": { "const": "screenshot" },
+				"url": { "type": "string", "maxLength": 2000 },
+				"comment": { "type": "string", "maxLength": 5000 },
+				"attachment": { "$ref": "#/definitions/id" }
+			}
+		},
+		"target": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["selector", "tag", "text", "html", "attrs", "rect"],
+			"properties": {
+				"selector": { "type": "string", "maxLength": 1000 },
+				"tag": { "type": "string", "maxLength": 100 },
+				"text": { "type": "string", "maxLength": 400 },
+				"html": { "type": "string", "maxLength": 2000 },
+				"attrs": {
+					"type": "object",
+					"maxProperties": 40,
+					"propertyNames": { "maxLength": 100 },
+					"additionalProperties": { "type": "string", "maxLength": 400 }
+				},
+				"rect": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["x", "y", "width", "height"],
+					"properties": {
+						"x": { "type": "integer", "minimum": -1000000, "maximum": 1000000 },
+						"y": { "type": "integer", "minimum": -1000000, "maximum": 1000000 },
+						"width": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+						"height": { "type": "integer", "minimum": 0, "maximum": 1000000 }
+					}
+				},
+				"source": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["file", "line", "column"],
+					"properties": {
+						"file": { "type": "string", "maxLength": 500 },
+						"line": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+						"column": { "type": "integer", "minimum": 0, "maximum": 1000000 }
+					}
+				}
+			}
+		},
+		"attachment": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["id", "mime", "width", "height", "data"],
+			"properties": {
+				"id": { "$ref": "#/definitions/id" },
+				"mime": { "const": "image/png" },
+				"width": { "type": "integer", "minimum": 1, "maximum": 8192 },
+				"height": { "type": "integer", "minimum": 1, "maximum": 8192 },
+				"data": {
+					"description": "Base64 without a data URL prefix.",
+					"type": "string",
+					"maxLength": 2800000,
+					"pattern": "^[A-Za-z0-9+/]+={0,2}$"
+				}
+			}
+		}
+	}
+}
