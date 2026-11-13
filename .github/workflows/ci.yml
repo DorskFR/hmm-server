@@ -40,3 +40,22 @@ jobs:
         run: cargo +stable test
       - name: the schema matches the published client
         run: curl -fsSL https://unpkg.com/@dorsk/hmm/schema/envelope.v1.json | diff - schema/envelope.v1.json
+
+  ui:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run lint
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm test

@@ -1,0 +1,28 @@
+{
+	"name": "hmm-admin-ui",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"dev:mock": "HMM_MOCK=1 vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-check --tsconfig ./tsconfig.json",
+		"lint": "biome check . && tsumikit-lint src",
+		"format": "biome check --write .",
+		"test": "playwright test",
+		"shots": "node tests/shots.ts"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.6.7",
+		"@dorsk/tsumikit": "^0.83.0",
+		"@playwright/test": "1.64.1",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
+		"@types/node": "^26.6.6",
+		"svelte": "^5.57.3",
+		"svelte-check": "^4.7.8",
+		"typescript": "^6.0.3",
+		"vite": "^8.3.8"
+	}
+}

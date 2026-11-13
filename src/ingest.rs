@@ -13,7 +13,7 @@ use serde_json::{Value, json};
 use sqlx::types::Json as Jsonb;
 
 use crate::policy::Denied;
-use crate::{AppState, envelope, redact};
+use crate::{AppState, envelope, events, redact, webhook};
 
 pub const KEY_HEADER: &str = "x-hmm-key";
 const PNG_MAGIC: &[u8] = b"\x89PNG\r\n\x1a\n";
@@ -91,8 +91,9 @@ async fn store(
     blobs: &[Blob],
     origin: Option<&str>,
     address: Option<&str>,
-) -> anyhow::Result<()> {
-    let (project, id) = (report["project"].as_str(), report["id"].as_str());
+) -> anyhow::Result<u64> {
+    let project = report["project"].as_str().unwrap_or_default();
+    let id = report["id"].as_str().unwrap_or_default();
     let mut tx = db.begin().await?;
     let inserted = sqlx::query(
         "INSERT INTO reports (project, id, kind, category, fingerprint, comment, page_url, \
@@ -115,6 +116,7 @@ async fn store(
     .bind(Jsonb(report))
     .execute(&mut *tx)
     .await?;
+    let mut queued = 0;
     if inserted.rows_affected() == 1 {
         for blob in blobs {
             sqlx::query(
@@ -131,9 +133,13 @@ async fn store(
             .execute(&mut *tx)
             .await?;
         }
+        let bytes: usize = blobs.iter().map(|blob| blob.data.len()).sum();
+        let received = json!({ "attachments": blobs.len(), "bytes": bytes });
+        events::record(&mut *tx, project, id, events::SYSTEM, "received", received).await?;
+        queued = webhook::enqueue(&mut tx, project, id, webhook::CREATED, json!({})).await?;
     }
     tx.commit().await?;
-    Ok(())
+    Ok(queued)
 }
 
 pub async fn receive(
@@ -205,9 +211,12 @@ pub async fn receive(
             .map_err(|e| internal("storing an attachment")(e.into()))?;
     }
 
-    store(&state.db, &report, &blobs, origin, address)
+    let queued = store(&state.db, &report, &blobs, origin, address)
         .await
         .map_err(internal("storing the report"))?;
+    if queued > 0 {
+        state.wake.notify_one();
+    }
 
     tracing::info!(%project, %id, attachments = blobs.len(), "report stored");
     Ok((StatusCode::ACCEPTED, Json(json!({ "id": id }))).into_response())

@@ -7,7 +7,7 @@ use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use futures_util::TryStreamExt;
-use hmm_server::policy::{Limiter, Policy};
+use hmm_server::policy::Policy;
 use hmm_server::{AppState, MIGRATOR, build_router};
 use http_body_util::BodyExt;
 use object_store::memory::InMemory;
@@ -32,12 +32,11 @@ async fn app(policy: Option<&str>) -> Option<App> {
     let db = PgPoolOptions::new().max_connections(2).connect(&url).await.unwrap();
     MIGRATOR.run(&db).await.unwrap();
     let blobs = Arc::new(InMemory::new());
-    let state = Arc::new(AppState {
-        db: db.clone(),
-        blobs: blobs.clone() as Arc<dyn ObjectStore>,
-        policy: Policy::parse(policy).unwrap(),
-        limiter: Limiter::default(),
-    });
+    let state = Arc::new(AppState::new(
+        db.clone(),
+        blobs.clone() as Arc<dyn ObjectStore>,
+        Policy::parse(policy).unwrap(),
+    ));
     Some(App { router: build_router(state, 32 * 1024 * 1024), db, blobs })
 }
 
@@ -117,6 +116,17 @@ async fn a_report_is_stored_with_its_images_in_the_object_store() {
     let png = app.blobs.get(&Path::from(rows[0].2.as_str())).await.unwrap().bytes().await.unwrap();
     assert!(png.starts_with(b"\x89PNG"));
     assert_eq!(i64::try_from(png.len()).unwrap(), rows[0].1);
+
+    let events: Vec<(String, String, sqlx::types::Json<Value>)> = sqlx::query_as(
+        "SELECT actor, type, data FROM report_events WHERE project = 'stores' AND report_id = $1",
+    )
+    .bind(&id)
+    .fetch_all(&app.db)
+    .await
+    .unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!((events[0].0.as_str(), events[0].1.as_str()), ("system", "received"));
+    assert_eq!(events[0].2.0, json!({ "attachments": 2, "bytes": rows[0].1 + rows[1].1 }));
 }
 
 #[tokio::test]
