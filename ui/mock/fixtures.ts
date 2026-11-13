@@ -362,7 +362,6 @@ export function createState(now = Date.now()): MockState {
 			ticket,
 			claim,
 			origin: site.origin,
-			remote_addr: `203.0.113.${4 + (i % 40)}`,
 			attachments,
 			events,
 			envelope: {

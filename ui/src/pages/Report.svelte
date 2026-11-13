@@ -124,7 +124,6 @@
 			...(client ? [{ label: 'Client', value: client }] : []),
 			{ label: 'Created', value: createdAt },
 			{ label: 'Received', value: receivedAt },
-			...(r.remote_addr ? [{ label: 'Remote address', value: r.remote_addr, mono: true }] : []),
 			{ label: 'Report id', value: reportId },
 		];
 	});

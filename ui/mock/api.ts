@@ -35,7 +35,7 @@ function page<T>(items: T[], params: URLSearchParams, fallback = 50) {
 }
 
 function summary(report: Report): ReportSummary {
-	const { origin, remote_addr, envelope, events, attachments, ...rest } = report;
+	const { origin, envelope, events, attachments, ...rest } = report;
 	return { ...rest, claim: liveClaim(report), attachments: attachments.length };
 }
 

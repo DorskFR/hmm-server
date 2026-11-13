@@ -164,7 +164,7 @@ async fn a_key_is_held_to_its_scopes_and_projects() {
     let (status, shown) = call(&app, Method::GET, &report, &reader, None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(shown["origin"], Value::Null);
-    assert_eq!(shown.get("remote_addr"), None, "only admin sees the address");
+    assert_eq!(shown.get("remote_addr"), None);
     assert_eq!(shown["attachments"].as_array().unwrap().len(), 2);
     assert_eq!(shown["attachments"][0]["mime"], "image/png");
     assert_eq!(shown["envelope"]["id"], "r1");
@@ -212,7 +212,7 @@ async fn a_key_is_held_to_its_scopes_and_projects() {
 
     let admin = key(&app, "scoped-admin", &["*"], &["reports:read", "admin"]).await;
     let (_, shown) = call(&app, Method::GET, &other, &admin, None).await;
-    assert_eq!(shown["remote_addr"], "203.0.113.4");
+    assert_eq!(shown.get("remote_addr"), None, "the sender address is never stored");
 }
 
 #[tokio::test]

@@ -30,7 +30,7 @@ macro_rules! select_reports {
              r.claimed_by, r.claimed_until, (r.claimed_until > now()) IS TRUE AS claim_live, \
              (SELECT count(*) FROM attachments a \
               WHERE a.project = r.project AND a.report_id = r.id) AS attachment_count, \
-             r.origin, r.remote_addr \
+             r.origin \
              FROM reports r ",
             $tail
         )
@@ -57,7 +57,6 @@ struct Report {
     claim_live: bool,
     attachment_count: i64,
     origin: Option<String>,
-    remote_addr: Option<String>,
 }
 
 impl Report {
@@ -104,7 +103,7 @@ fn visible(caller: &Caller, project: &str) -> Result<(), ApiError> {
     if caller.sees(project) { Ok(()) } else { Err(ApiError::not_found()) }
 }
 
-async fn detail(db: &PgPool, caller: &Caller, project: &str, id: &str) -> Result<Value, ApiError> {
+async fn detail(db: &PgPool, project: &str, id: &str) -> Result<Value, ApiError> {
     let report: Report = sqlx::query_as(select_reports!("WHERE r.project = $1 AND r.id = $2"))
         .bind(project)
         .bind(id)
@@ -127,9 +126,6 @@ async fn detail(db: &PgPool, caller: &Caller, project: &str, id: &str) -> Result
     .await?;
     let mut body = report.summary();
     body["origin"] = json!(report.origin);
-    if caller.has(auth::ADMIN) {
-        body["remote_addr"] = json!(report.remote_addr);
-    }
     body["envelope"] = envelope;
     body["attachments"] = json!(attachments);
     body["events"] = json!(events::of_report(db, project, id).await?);
@@ -250,7 +246,7 @@ pub async fn show(
 ) -> Result<Json<Value>, ApiError> {
     caller.require(auth::READ)?;
     visible(&caller, &project)?;
-    Ok(Json(detail(&state.db, &caller, &project, &id).await?))
+    Ok(Json(detail(&state.db, &project, &id).await?))
 }
 
 pub async fn attachment(
@@ -356,7 +352,7 @@ pub async fn update(
     if queued > 0 {
         state.wake.notify_one();
     }
-    Ok(Json(detail(&state.db, &caller, &project, &id).await?))
+    Ok(Json(detail(&state.db, &project, &id).await?))
 }
 
 #[derive(sqlx::FromRow)]
@@ -429,7 +425,7 @@ pub async fn claim(
     events::record(&mut *tx, &project, &id, &caller.actor, "claimed", json!({ "until": until }))
         .await?;
     tx.commit().await?;
-    Ok(Json(detail(&state.db, &caller, &project, &id).await?))
+    Ok(Json(detail(&state.db, &project, &id).await?))
 }
 
 pub async fn release(

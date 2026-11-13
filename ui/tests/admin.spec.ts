@@ -58,7 +58,7 @@ test('report: change status, add a note, release the claim; the timeline follows
 		.click();
 	await expect(page).toHaveURL(/\/reports\/cctui\/r_8f2a91$/);
 	await expect(page.getByRole('heading', { name: /Feedback/ })).toBeVisible();
-	await expect(page.getByText('203.0.113.4')).toBeVisible();
+	await expect(page.getByText('Remote address')).toHaveCount(0);
 
 	const timeline = page.getByRole('list', { name: 'Activity' });
 	await expect(timeline.getByRole('listitem')).toHaveCount(3);
