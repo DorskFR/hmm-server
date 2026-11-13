@@ -72,7 +72,7 @@ projects (`*` for all) and to scopes:
 | `reports:read` | List and show reports and their events. |
 | `attachments:read` | Download screenshots. |
 | `reports:triage` | Change status, assignee, ticket; claim and release; add notes. |
-| `admin` | Keys, webhooks, deliveries, access log; `remote_addr` in reports. |
+| `admin` | Keys, webhooks, deliveries, access log. |
 
 Only the SHA-256 of a key is stored, so the token is shown once, when it is created. The first key
 is made on the command line, which needs only `DATABASE_URL`:

@@ -43,7 +43,6 @@ export interface ReportEvent {
 
 export interface Report extends Omit<ReportSummary, 'attachments'> {
 	origin: string | null;
-	remote_addr?: string | null;
 	envelope: unknown;
 	attachments: Attachment[];
 	events: ReportEvent[];

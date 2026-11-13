@@ -90,15 +90,14 @@ async fn store(
     report: &Value,
     blobs: &[Blob],
     origin: Option<&str>,
-    address: Option<&str>,
 ) -> anyhow::Result<u64> {
     let project = report["project"].as_str().unwrap_or_default();
     let id = report["id"].as_str().unwrap_or_default();
     let mut tx = db.begin().await?;
     let inserted = sqlx::query(
         "INSERT INTO reports (project, id, kind, category, fingerprint, comment, page_url, \
-         client_name, client_version, created_at, origin, remote_addr, envelope) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::timestamptz, $11, $12, $13) \
+         client_name, client_version, created_at, origin, envelope) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::timestamptz, $11, $12) \
          ON CONFLICT DO NOTHING",
     )
     .bind(project)
@@ -112,7 +111,6 @@ async fn store(
     .bind(report["client"]["version"].as_str())
     .bind(report["createdAt"].as_str())
     .bind(origin)
-    .bind(address)
     .bind(Jsonb(report))
     .execute(&mut *tx)
     .await?;
@@ -211,9 +209,8 @@ pub async fn receive(
             .map_err(|e| internal("storing an attachment")(e.into()))?;
     }
 
-    let queued = store(&state.db, &report, &blobs, origin, address)
-        .await
-        .map_err(internal("storing the report"))?;
+    let queued =
+        store(&state.db, &report, &blobs, origin).await.map_err(internal("storing the report"))?;
     if queued > 0 {
         state.wake.notify_one();
     }

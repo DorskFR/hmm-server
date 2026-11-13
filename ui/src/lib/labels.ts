@@ -34,7 +34,7 @@ export const SCOPES = [
 	{
 		id: 'admin',
 		label: 'Admin',
-		help: 'Manage keys and webhooks, read the access log and remote addresses.',
+		help: 'Manage keys and webhooks, read the access log.',
 	},
 ];
 

@@ -28,7 +28,7 @@ is 32. Only the SHA-256 of the whole token is stored.
 | `reports:read` | List and show reports and their events. |
 | `attachments:read` | Download screenshots. |
 | `reports:triage` | Change status, assignee, ticket; claim and release; add notes. |
-| `admin` | Keys, webhooks, deliveries, access log; `remote_addr` in reports. |
+| `admin` | Keys, webhooks, deliveries, access log. |
 
 A key lists its projects; `*` means all. A report in a project the key cannot see answers `404`.
 A revoked or expired key answers `401`, a missing scope `403`.
@@ -85,14 +85,13 @@ The list fields plus:
 ```json
 {
   "origin": "https://cctui.dorsk.dev",
-  "remote_addr": "203.0.113.4",
   "envelope": { … },
   "attachments": [ { "id": "a1", "mime": "image/png", "width": 1440, "height": 900, "bytes": 206112 } ],
   "events": [ { "at": "…", "actor": "system", "type": "received", "data": {} } ]
 }
 ```
 
-`remote_addr` is present only with `admin`. `attachments` here is the list, not the count.
+`attachments` here is the list, not the count.
 
 ### `GET /v1/admin/reports/{project}/{id}/attachments/{attachment}` (`attachments:read`)
 
