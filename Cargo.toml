@@ -1,6 +1,6 @@
 [package]
 name = "hmm-server"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.94"
 license = "MIT"
@@ -21,11 +21,11 @@ doc_markdown = "allow"
 
 [dependencies]
 axum = "0.8"
-tower-http = { version = "0.7", features = ["cors", "trace"] }
+tower-http = { version = "0.7", features = ["cors", "fs", "trace"] }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "json", "migrate", "macros"] }
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "json", "migrate", "macros", "chrono", "uuid"] }
 object_store = { version = "0.14", features = ["aws"] }
 bytes = "1"
 base64 = "0.22"
@@ -36,6 +36,14 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow = "1"
 clap = { version = "4", features = ["derive", "env"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+uuid = { version = "1", features = ["serde"] }
+sha2 = "0.11"
+hmac = "0.13"
+hex = "0.4"
+getrandom = "0.3"
+reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
+tower = { version = "0.5", features = ["util"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

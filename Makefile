@@ -9,7 +9,7 @@ fmt:
 lint:
 	cargo clippy --all-targets -- -D warnings
 
-test:  ## Needs `make db/up`; without a database the ingest tests are skipped
+test:  ## Needs `make db/up`; without a database the database tests are skipped
 	cargo test
 
 db/up:
