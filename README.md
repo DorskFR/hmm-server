@@ -20,6 +20,7 @@ Migrations are applied at start. Point the client at it with `endpoint="https://
 | Variable | Default | Purpose |
 |---|---|---|
 | `DATABASE_URL` | required | Postgres connection string. |
+| `HMM_DB_CONNECTIONS` | `5` | Postgres pool size. |
 | `HMM_S3_BUCKET` | required | Bucket for the screenshots. It must exist. |
 | `HMM_S3_ENDPOINT` | AWS | Set for an S3-compatible store; path-style addressing is then used. |
 | `HMM_S3_REGION` | `us-east-1` | |
