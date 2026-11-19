@@ -6,7 +6,7 @@ use clap::Parser;
 use hmm_server::config::{Cli, Command, Config, KeyCommand};
 use hmm_server::policy::Policy;
 use hmm_server::{
-    AppState, MIGRATOR, auth, build_admin_router, build_router, run_maintenance, webhook,
+    AppState, MIGRATOR, auth, build_admin_router, build_router, run_maintenance, tickets, webhook,
 };
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
@@ -24,9 +24,23 @@ async fn database(config: &Config) -> anyhow::Result<PgPool> {
     Ok(db)
 }
 
+fn ticket_source(config: &Config) -> anyhow::Result<Option<tickets::TicketSource>> {
+    match (&config.youtrack_url, &config.youtrack_token) {
+        (Some(url), Some(token)) => Ok(Some(tickets::TicketSource::new(url, token)?)),
+        _ => Ok(None),
+    }
+}
+
 async fn serve(config: Config) -> anyhow::Result<()> {
     let policy = Policy::parse(config.policy.as_deref()).context("HMM_POLICY is not valid")?;
     let blobs = config.blobs().context("configuring the object store")?;
+    let source = ticket_source(&config)?;
+    if let Some(source) = &source {
+        let (url, every_secs) = (source.url(), config.ticket_sync_secs);
+        tracing::info!(%url, every_secs, "ticket sync enabled");
+    } else {
+        tracing::info!("ticket sync disabled: set HMM_YOUTRACK_URL and HMM_YOUTRACK_TOKEN");
+    }
     let db = database(&config).await?;
     let state = Arc::new(AppState {
         webhooks: webhook::Settings::allowing(&config.webhook_allow_hosts),
@@ -47,6 +61,10 @@ async fn serve(config: Config) -> anyhow::Result<()> {
         let _ = stopped.changed().await;
     };
     let deliveries = tokio::spawn(webhook::run(state.clone(), stopped.clone()));
+    let sync = source.map(|source| {
+        let every = std::time::Duration::from_secs(config.ticket_sync_secs);
+        tokio::spawn(tickets::run(state.clone(), source, every, stopped.clone()))
+    });
     let mut terminate = signal(SignalKind::terminate())?;
     tokio::spawn(async move {
         tokio::select! {
@@ -61,6 +79,9 @@ async fn serve(config: Config) -> anyhow::Result<()> {
         .with_graceful_shutdown(until_stopped(stopped));
     tokio::try_join!(public.into_future(), admin.into_future())?;
     deliveries.await?;
+    if let Some(sync) = sync {
+        sync.await?;
+    }
     Ok(())
 }
 

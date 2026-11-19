@@ -7,6 +7,7 @@ pub mod events;
 pub mod ingest;
 pub mod policy;
 pub mod redact;
+pub mod tickets;
 pub mod ui;
 pub mod webhook;
 

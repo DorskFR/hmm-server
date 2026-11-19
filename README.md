@@ -31,6 +31,9 @@ Migrations are applied at start. Point the client at it with `endpoint="https://
 | `HMM_WEBHOOK_ALLOW_HOSTS` | none | Comma-separated webhook hosts that may use `http` and resolve to private addresses. |
 | `HMM_MAX_BODY_BYTES` | 32 MiB | Largest request accepted. |
 | `HMM_POLICY` | none | JSON, see [Policy](#policy). |
+| `HMM_YOUTRACK_URL` | none | YouTrack base URL, e.g. `https://youtrack.example.com`. With `HMM_YOUTRACK_TOKEN`, turns on [ticket sync](#ticket-sync). |
+| `HMM_YOUTRACK_TOKEN` | none | Permanent token for the YouTrack API. |
+| `HMM_TICKET_SYNC_SECS` | `300` | Seconds between ticket syncs. |
 
 ## HTTP
 
@@ -147,6 +150,18 @@ A delivery may arrive more than once (a retry after a lost answer); `x-hmm-deliv
 each time. The payload carries no screenshots and no client address: fetch the report with a key.
 URLs must be `https` and must not resolve to loopback, private or link-local addresses, except for
 hosts in `HMM_WEBHOOK_ALLOW_HOSTS`.
+
+## Ticket sync
+
+With `HMM_YOUTRACK_URL` and `HMM_YOUTRACK_TOKEN` set, the server checks the YouTrack issue named in
+each report's `ticket` (an id such as `KUSA-1363`, or an issue URL on that instance) every
+`HMM_TICKET_SYNC_SECS`. A `triaged` or `in_progress` report whose issue is resolved becomes
+`resolved`; a report the sync resolved goes back to `triaged` when its issue is reopened. A report
+resolved by anyone else is never reopened. Each change is recorded as a `status` and a `note`
+event by `sync:youtrack` and sends `report.status_changed` webhooks.
+
+The token needs read access to the projects' issues only: use a permanent token of a dedicated
+read-only YouTrack user.
 
 ## Policy
 

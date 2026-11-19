@@ -13,10 +13,10 @@ use serde_json::{Map, Value, json};
 use sqlx::{PgPool, Postgres, QueryBuilder};
 
 use super::{body, cursor, limit, optional_body, page, param, params};
+use crate::AppState;
 use crate::auth::{self, Caller};
 use crate::error::ApiError;
 use crate::events::{self, Event};
-use crate::{AppState, webhook};
 
 const STATUSES: [&str; 5] = ["new", "triaged", "in_progress", "resolved", "dismissed"];
 const OPEN: [&str; 3] = ["new", "triaged", "in_progress"];
@@ -324,15 +324,8 @@ pub async fn update(
     let (old_status, old_assignee, old_ticket) = current.ok_or_else(ApiError::not_found)?;
     let mut queued = 0;
     if let Some(status) = status.filter(|status| *status != old_status) {
-        sqlx::query("UPDATE reports SET status = $3 WHERE project = $1 AND id = $2")
-            .bind(&project)
-            .bind(&id)
-            .bind(&status)
-            .execute(&mut *tx)
+        queued = events::change_status(&mut tx, &project, &id, &caller.actor, &old_status, &status)
             .await?;
-        let change = json!({ "from": old_status, "to": status });
-        events::record(&mut *tx, &project, &id, &caller.actor, "status", change.clone()).await?;
-        queued = webhook::enqueue(&mut tx, &project, &id, webhook::STATUS_CHANGED, change).await?;
     }
     let texts = [
         ("assignee", "assigned", assignee, old_assignee),
