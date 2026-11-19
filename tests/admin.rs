@@ -406,16 +406,17 @@ async fn a_patch_changes_fields_and_writes_an_event_for_each() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(
         (&report["status"], &report["assignee"], &report["ticket"]),
-        (&json!("triaged"), &json!("claude"), &json!("HMM-2"))
+        (&json!("resolved"), &json!("claude"), &json!("HMM-2"))
     );
     assert_eq!(event_types(&report), ["received", "status", "assigned", "ticket"]);
     let events = report["events"].as_array().unwrap();
     assert!(events[1..].iter().all(|e| e["actor"] == json!(actor)), "{events:?}");
-    assert_eq!(events[1]["data"], json!({ "from": "new", "to": "triaged" }));
+    assert_eq!(events[1]["data"], json!({ "from": "new", "to": "resolved" }));
     assert_eq!(events[2]["data"], json!({ "from": null, "to": "claude" }));
     assert_eq!(events[3]["data"], json!({ "from": null, "to": "HMM-2" }));
 
-    let (_, report) = change(json!({ "status": "triaged", "assignee": "claude" })).await;
+    let (_, report) =
+        change(json!({ "status": "resolved", "assignee": "claude", "ticket": "HMM-2" })).await;
     assert_eq!(event_types(&report).len(), 4, "nothing changed, nothing logged");
 
     let (_, report) = change(json!({ "assignee": null, "status": "new" })).await;
@@ -444,6 +445,42 @@ async fn a_patch_changes_fields_and_writes_an_event_for_each() {
     let (status, _) =
         call(&app, Method::PATCH, &missing, &token, Some(json!({ "status": "new" }))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn attaching_a_ticket_resolves_an_open_report() {
+    let Some(app) = app().await else { return };
+    let project = unique("ticketed");
+    for id in ["r1", "r2", "r3", "r4"] {
+        ingest(&app, &project, id).await;
+    }
+    let token = key(&app, "ticketed", &[&project], AGENT).await;
+    let patch = |id: &'static str, body: Value| {
+        let (app, token, project) = (&app, &token, &project);
+        async move {
+            let path = format!("/v1/admin/reports/{project}/{id}");
+            call(app, Method::PATCH, &path, token, Some(body)).await.1
+        }
+    };
+
+    let report = patch("r1", json!({ "ticket": "CCT-1" })).await;
+    assert_eq!((&report["status"], &report["ticket"]), (&json!("resolved"), &json!("CCT-1")));
+    assert_eq!(event_types(&report), ["received", "status", "ticket"]);
+    assert_eq!(report["events"][1]["data"], json!({ "from": "new", "to": "resolved" }));
+
+    let report = patch("r2", json!({ "status": "in_progress", "ticket": "CCT-2" })).await;
+    assert_eq!(report["status"], json!("resolved"));
+
+    let report = patch("r3", json!({ "status": "dismissed", "ticket": "CCT-3" })).await;
+    assert_eq!(report["status"], json!("dismissed"));
+
+    let report = patch("r1", json!({ "status": "in_progress" })).await;
+    assert_eq!(report["status"], json!("in_progress"), "a ticket already there changes nothing");
+    let report = patch("r1", json!({ "ticket": null })).await;
+    assert_eq!(report["status"], json!("in_progress"));
+
+    let report = patch("r4", json!({ "ticket": "  " })).await;
+    assert_eq!(report["status"], json!("new"), "an empty ticket is no ticket");
 }
 
 #[tokio::test]

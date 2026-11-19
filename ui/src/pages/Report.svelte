@@ -303,7 +303,7 @@
 							{/if}
 						</div>
 					</Field>
-					<Field label="Ticket">
+					<Field label="Ticket" hint="Linking a ticket resolves the report.">
 						<div class="inline-edit">
 							<Input
 								bind:value={ticket}

@@ -78,6 +78,8 @@ test('report: change status, add a note, release the claim; the timeline follows
 	await page.getByRole('textbox', { name: 'Ticket' }).fill('CCT-900');
 	await page.getByRole('textbox', { name: 'Ticket' }).press('Enter');
 	await expect(timeline).toContainText('You linked ticket CCT-900');
+	await expect(timeline).toContainText('You changed the status from triaged to resolved');
+	await expect(page.getByLabel('Status', { exact: true })).toHaveValue('resolved');
 
 	await page.getByRole('button', { name: 'Release claim' }).click();
 	await expect(page.getByText('Nobody holds this report.')).toBeVisible();
@@ -90,8 +92,8 @@ test('report: change status, add a note, release the claim; the timeline follows
 	await expect(dialog.getByRole('img', { name: 'Screenshot 2 of 2' })).toBeVisible();
 
 	await page.reload();
-	await expect(page.getByLabel('Status', { exact: true })).toHaveValue('triaged');
-	await expect(page.getByRole('list', { name: 'Activity' }).getByRole('listitem')).toHaveCount(7);
+	await expect(page.getByLabel('Status', { exact: true })).toHaveValue('resolved');
+	await expect(page.getByRole('list', { name: 'Activity' }).getByRole('listitem')).toHaveCount(8);
 });
 
 test('keys: create shows the token once, a duplicate name is refused, revoke asks first', async ({
