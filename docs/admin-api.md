@@ -122,7 +122,8 @@ Body: `{"note": "…"}` (1 to 4000 characters). `201` with the event.
 
 ### Events
 
-`{ "at", "actor", "type", "data" }`. `actor` is `system`, `key:<name>` or `admin:<device>`.
+`{ "at", "actor", "type", "data" }`. `actor` is `system`, `key:<name>`, `admin:<device>` or `sync:youtrack` (the
+[ticket sync](../README.md#ticket-sync)).
 
 | Type | `data` |
 |---|---|
