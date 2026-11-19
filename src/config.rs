@@ -79,19 +79,6 @@ pub struct Config {
     /// Comma-separated webhook hosts that may use http and resolve to private addresses.
     #[arg(long, env = "HMM_WEBHOOK_ALLOW_HOSTS", value_delimiter = ',', global = true)]
     pub webhook_allow_hosts: Vec<String>,
-    /// Ticket sync runs only when this and HMM_YOUTRACK_TOKEN are set.
-    #[arg(long, env = "HMM_YOUTRACK_URL", global = true)]
-    pub youtrack_url: Option<String>,
-    #[arg(long, env = "HMM_YOUTRACK_TOKEN", hide_env_values = true, global = true)]
-    pub youtrack_token: Option<String>,
-    #[arg(
-        long,
-        env = "HMM_TICKET_SYNC_SECS",
-        default_value_t = 300,
-        value_parser = clap::value_parser!(u64).range(1..),
-        global = true
-    )]
-    pub ticket_sync_secs: u64,
 }
 
 impl Config {
@@ -134,9 +121,6 @@ mod tests {
             ("0.0.0.0:8080", "0.0.0.0:8081")
         );
         assert_eq!(cli.config.ui_dir, PathBuf::from("/usr/share/hmm-server/ui"));
-        assert_eq!(cli.config.ticket_sync_secs, 300);
-        assert!(cli.config.youtrack_url.is_none() && cli.config.youtrack_token.is_none());
-        assert!(Cli::try_parse_from(["hmm-server", "--ticket-sync-secs", "0"]).is_err());
 
         let cli =
             Cli::try_parse_from(["hmm-server", "serve", "--webhook-allow-hosts", "a.svc,b.svc"])

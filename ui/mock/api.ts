@@ -1,5 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { ApiKey, Delivery, Report, ReportSummary, Status, Webhook } from '../src/lib/api.ts';
+import { OPEN_STATUSES } from '../src/lib/labels.ts';
 import { createState, type MockState } from './fixtures.ts';
 import { fakeScreenshot } from './png.ts';
 
@@ -115,6 +116,9 @@ export function createMockApi() {
 		if (errors.length) return invalid(errors);
 		const change = (type: string, from: unknown, to: unknown) =>
 			report.events.push({ at: now(), actor: state.actor, type, data: { from, to } });
+		const open = (status: unknown) => OPEN_STATUSES.includes(status as Status);
+		const attaching = typeof body.ticket === 'string' && body.ticket !== report.ticket;
+		if (attaching && open('status' in body ? body.status : report.status)) body.status = 'resolved';
 		if ('status' in body && body.status !== report.status) {
 			change('status', report.status, body.status);
 			report.status = body.status as Status;

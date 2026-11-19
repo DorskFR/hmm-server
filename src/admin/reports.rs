@@ -322,6 +322,12 @@ pub async fn update(
     .fetch_optional(&mut *tx)
     .await?;
     let (old_status, old_assignee, old_ticket) = current.ok_or_else(ApiError::not_found)?;
+    let attaching = matches!(&ticket, Some(Some(new)) if old_ticket.as_ref() != Some(new));
+    let status = match status {
+        Some(status) if attaching && OPEN.contains(&status.as_str()) => Some("resolved".to_owned()),
+        None if attaching && OPEN.contains(&old_status.as_str()) => Some("resolved".to_owned()),
+        status => status,
+    };
     let mut queued = 0;
     if let Some(status) = status.filter(|status| *status != old_status) {
         queued = events::change_status(&mut tx, &project, &id, &caller.actor, &old_status, &status)

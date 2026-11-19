@@ -102,6 +102,9 @@ The PNG, `content-type: image/png`, `cache-control: private, max-age=3600`.
 Body: any of `{"status", "assignee", "ticket"}`; `null` (or an empty string) clears assignee or
 ticket, which hold at most 200 characters. Statuses:
 `new`, `triaged`, `in_progress`, `resolved`, `dismissed`. Any status may move to any other.
+Attaching a ticket resolves the report: the tracker owns the follow-up. If the report would be
+left `new`, `triaged` or `in_progress`, it becomes `resolved` in the same change; `dismissed` stays.
+Use `dismissed` for a report that needs no ticket.
 Answers the report as `GET` does. Each change writes an event; a value equal to the current one
 changes nothing and writes none. An unknown status answers `400`.
 
@@ -122,8 +125,7 @@ Body: `{"note": "…"}` (1 to 4000 characters). `201` with the event.
 
 ### Events
 
-`{ "at", "actor", "type", "data" }`. `actor` is `system`, `key:<name>`, `admin:<device>` or `sync:youtrack` (the
-[ticket sync](../README.md#ticket-sync)).
+`{ "at", "actor", "type", "data" }`. `actor` is `system`, `key:<name>` or `admin:<device>`.
 
 | Type | `data` |
 |---|---|
