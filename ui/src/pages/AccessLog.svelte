@@ -107,7 +107,6 @@
 			rowKey={(e) => `${e.at}/${e.key_id}/${e.method}/${e.path}`}
 			layout="fixed"
 			responsive="stack"
-			style="--dt-meta-font: var(--font-sans)"
 			size="sm"
 			loading={list.loading && !list.loaded}
 			loadingRows={12}

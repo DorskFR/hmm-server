@@ -138,7 +138,6 @@
 			layout="fixed"
 			responsive="stack"
 			stackActions="end"
-			style="--dt-meta-font: var(--font-sans)"
 			loading={list.loading && !list.loaded}
 			loadingRows={8}
 			loadingLabel="Loading deliveries"

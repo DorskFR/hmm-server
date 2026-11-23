@@ -201,7 +201,6 @@
 			layout="fixed"
 			responsive="stack"
 			stackActions="end"
-			style="--dt-meta-font: var(--font-sans)"
 			loading={!hooks.data}
 			loadingRows={3}
 			loadingLabel="Loading webhooks"
