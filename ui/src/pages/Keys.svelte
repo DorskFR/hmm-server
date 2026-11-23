@@ -199,7 +199,6 @@
 			layout="fixed"
 			responsive="stack"
 			stackActions="end"
-			style="--dt-meta-font: var(--font-sans)"
 			loading={!keys.data}
 			loadingRows={4}
 			loadingLabel="Loading keys"

@@ -232,7 +232,6 @@
 			rowKey={(r) => `${r.project}/${r.id}`}
 			layout="fixed"
 			responsive="stack"
-			style="--dt-meta-font: var(--font-sans)"
 			loading={list.loading && !list.loaded}
 			loadingRows={8}
 			loadingLabel="Loading reports"
