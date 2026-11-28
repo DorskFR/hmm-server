@@ -910,7 +910,7 @@ dependencies = [
 
 [[package]]
 name = "hmm-server"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "anyhow",
  "axum",
